@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build-test:
+    name: Build & test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build
+        run: dotnet build --configuration Release
+
+      - name: Test
+        run: dotnet test --configuration Release --no-build --verbosity normal
+
+  privacy-check:
+    name: Verify no networking code
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fail if the app source references networking APIs
+        shell: bash
+        run: |
+          if grep -rnE "System\.Net|HttpClient|WebClient|TcpClient|UdpClient|Socket" src --include="*.cs" --exclude-dir=obj --exclude-dir=bin; then
+            echo "::error::Networking APIs found. Teqit.DiskSpace must stay offline - see SECURITY.md."
+            exit 1
+          fi
+          echo "No networking APIs referenced in src/."

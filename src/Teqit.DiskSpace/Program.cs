@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
+using System.Reflection;
 using Spectre.Console;
 using Teqit.DiskSpace;
 using Teqit.DiskSpace.Scanning;
@@ -15,6 +16,13 @@ catch (Exception ex) when (ex is ArgumentException or FormatException)
     return 2;
 }
 
+if (options.ShowVersion)
+{
+    var version = typeof(Options).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "unknown";
+    Console.WriteLine($"diskspace {version.Split('+')[0]}");
+    return 0;
+}
+
 if (options.Help)
 {
     Console.WriteLine(Options.HelpText);
@@ -28,13 +36,16 @@ if (!Directory.Exists(options.Path))
 }
 
 using var cts = new CancellationTokenSource();
-bool scanRunning = true;
+int scanRunning = 1; // accessed via Volatile: written by the scan task, read by the Ctrl+C handler
 Console.CancelKeyPress += (_, e) =>
 {
-    if (!scanRunning || cts.IsCancellationRequested) return; // outside the scan (or a second Ctrl+C) exit normally
+    if (Volatile.Read(ref scanRunning) == 0 || cts.IsCancellationRequested) return; // outside the scan (or a second Ctrl+C) exit normally
     e.Cancel = true;
     cts.Cancel();
 };
+
+// Redirected output reports a default width of 80, which squeezes the tables into unreadable cells.
+if (Console.IsOutputRedirected) AnsiConsole.Profile.Width = Math.Max(AnsiConsole.Profile.Width, 160);
 
 bool liveUi = !Console.IsOutputRedirected;
 bool keys = liveUi && !Console.IsInputRedirected;
@@ -49,7 +60,7 @@ var scan = Task.Run(() =>
 {
     var result = scanner.Scan(options.Path, cts.Token);
     elapsed = clock.Elapsed;
-    scanRunning = false;
+    Volatile.Write(ref scanRunning, 0);
     return result;
 });
 

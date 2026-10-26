@@ -9,6 +9,7 @@ public sealed class Options
     public bool NoCache { get; set; }
     public List<string> Excludes { get; } = new();
     public bool Help { get; set; }
+    public bool ShowVersion { get; set; }
 
     public static string DefaultRoot() =>
         OperatingSystem.IsWindows()
@@ -23,6 +24,7 @@ public sealed class Options
             switch (args[i])
             {
                 case "-h" or "--help" or "/?": o.Help = true; break;
+                case "--version": o.ShowVersion = true; break;
                 case "-p" or "--path": o.Path = Next(args, ref i); break;
                 case "-n" or "--top": o.Top = int.Parse(Next(args, ref i)); break;
                 case "--exclude": o.Excludes.Add(System.IO.Path.GetFullPath(Next(args, ref i))); break;
@@ -43,7 +45,7 @@ public sealed class Options
         i + 1 < args.Length ? args[++i] : throw new ArgumentException($"Missing value for {args[i]}.");
 
     public const string HelpText = """
-        Teqit.DiskSpace - find the biggest folders on your disk
+        diskspace - find the biggest folders on your disk
 
         Usage: diskspace [path] [options]
 
@@ -53,6 +55,7 @@ public sealed class Options
               --cross-mounts   Linux: also descend into other mounted filesystems
               --no-cache       Do not show/save the snapshot of the previous scan
               --no-interactive Print the report and exit (no drill-down browser)
+              --version        Show the version
           -h, --help           Show this help
         """;
 }
