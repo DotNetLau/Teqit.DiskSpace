@@ -54,6 +54,33 @@ Please read this first - it is the most important part.
 
 Grab the single-file executable for your platform from the [Releases page](https://github.com/DotNetLau/Teqit.DiskSpace/releases) (`win-x64`, `win-arm64`, `linux-x64`, `linux-arm64`). No .NET installation is needed. Verify the download against `SHA256SUMS.txt` from the same release.
 
+### Install as a .NET tool
+
+The project is packaged as a [.NET tool](https://learn.microsoft.com/dotnet/core/tools/global-tools), so it can be installed with the `dotnet` CLI and run from anywhere as `diskspace`. This needs the [.NET 10 SDK](https://dotnet.microsoft.com/download) or runtime.
+
+Pack it from a clone of the repository and install it from the local folder:
+
+```bash
+git clone https://github.com/DotNetLau/Teqit.DiskSpace.git
+cd Teqit.DiskSpace
+dotnet pack src/Teqit.DiskSpace -c Release -o nupkg
+dotnet tool install --global diskspace --add-source ./nupkg
+```
+
+Then run `diskspace` from any folder. To update after pulling new changes, run the `dotnet pack` command again and then:
+
+```bash
+dotnet tool update --global diskspace --add-source ./nupkg
+```
+
+To uninstall:
+
+```bash
+dotnet tool uninstall --global diskspace
+```
+
+The package ID is `diskspace`. The tool is not published to nuget.org.
+
 ### Build from source
 
 Requires the [.NET 10 SDK](https://dotnet.microsoft.com/download).
